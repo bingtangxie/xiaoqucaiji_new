@@ -67,12 +67,12 @@ class Fangtianxia01Spider(scrapy.Spider):
         #     yield scrapy.Request(url=url, callback=self.parse_city,
         #                          meta={'province': province, 'city': city})
 
-        # for i in range(int(entrance_list_length * 0.25), int(entrance_list_length * 0.5)):
-        #     url = entrance_list[i]['city_url']
-        #     province = entrance_list[i]['province']
-        #     city = entrance_list[i]['city']
-        #     yield scrapy.Request(url=url, callback=self.parse_city,
-        #                          meta={'province': province, 'city': city})
+        for i in range(int(entrance_list_length * 0.25), int(entrance_list_length * 0.5)):
+            url = entrance_list[i]['city_url']
+            province = entrance_list[i]['province']
+            city = entrance_list[i]['city']
+            yield scrapy.Request(url=url, callback=self.parse_city,
+                                 meta={'province': province, 'city': city})
 
         # for i in range(int(entrance_list_length * 0.5), int(entrance_list_length * 0.75)):
         #     url = entrance_list[i]['city_url']
@@ -81,12 +81,12 @@ class Fangtianxia01Spider(scrapy.Spider):
         #     yield scrapy.Request(url=url, callback=self.parse_city,
         #                          meta={'province': province, 'city': city})
 
-        for i in range(int(entrance_list_length * 0.75), entrance_list_length):
-            url = entrance_list[i]['city_url']
-            province = entrance_list[i]['province']
-            city = entrance_list[i]['city']
-            yield scrapy.Request(url=url, callback=self.parse_city,
-                                 meta={'province': province, 'city': city})
+        # for i in range(int(entrance_list_length * 0.75), entrance_list_length):
+        #     url = entrance_list[i]['city_url']
+        #     province = entrance_list[i]['province']
+        #     city = entrance_list[i]['city']
+        #     yield scrapy.Request(url=url, callback=self.parse_city,
+        #                          meta={'province': province, 'city': city})
 
     def parse_city(self, response):
         xinfang = response.xpath("//div[@track-id='newhouse']/div[@class='s4Box']/a")

@@ -47,6 +47,7 @@ class Fangtianxia02Spider(scrapy.Spider):
             detail_url = url.decode()
             if not self.redis.sismember(base_key, detail_url):
                 data = json.loads(self.redis.hget(r_key, detail_url))
+                data['r_key'] = r_key
                 yield scrapy.Request(url=detail_url, callback=self.parse_detail, meta=data)
 
     def parse_detail(self, response):
@@ -56,6 +57,7 @@ class Fangtianxia02Spider(scrapy.Spider):
         district = response.meta['district']
         street = response.meta['street']
         housing_url = response.meta['housing_url']
+        r_key = response.meta['r_key']
         if search_type == 'xinfang':
             housing_detail = response.xpath("//div[@class='fl more']/p/a")
             if housing_detail:
@@ -63,7 +65,7 @@ class Fangtianxia02Spider(scrapy.Spider):
                 yield scrapy.Request(url=housing_detail_url, callback=self.parse_detail_info,
                                      meta={'province': province, 'city': city, 'district': district, 'street': street,
                                            'housing_url': housing_url, 'housing_detail_url': housing_detail_url,
-                                           'search_type': search_type})
+                                           'search_type': search_type, "r_key": r_key})
             else:
                 pass
         if search_type == "ershoufang":
@@ -78,7 +80,7 @@ class Fangtianxia02Spider(scrapy.Spider):
                                      meta={'province': province, 'city': city, 'district': district, 'street': street,
                                            'housing_url': housing_url, 'housing_detail_url': housing_detail_url,
                                            'housing_name': housing_name, 'housing_price': housing_price,
-                                           'search_type': search_type, 'flag': flag})
+                                           'search_type': search_type, 'flag': flag, "r_key": r_key})
 
             elif housing_detail1:
                 flag = 1
@@ -92,7 +94,7 @@ class Fangtianxia02Spider(scrapy.Spider):
                                                    'housing_url': housing_url,
                                                    'housing_detail_url': housing_detail_url1,
                                                    'housing_name': housing_name, 'housing_price': housing_price,
-                                                   'search_type': search_type, 'flag': flag})
+                                                   'search_type': search_type, 'flag': flag, "r_key": r_key})
             else:
                 pass
 
@@ -105,6 +107,7 @@ class Fangtianxia02Spider(scrapy.Spider):
         street = response.meta['street']
         housing_url = response.meta['housing_url']
         housing_detail_url = response.meta['housing_detail_url']
+        r_key = response.meta["r_key"]
         if search_type == 'xinfang':
             housing_name = response.xpath("//div[@class='lpbt']/h1/a/text()").extract_first()
             housing_alias = response.xpath("//div[@class='lpbt']/span[@class='h1_label']/text()").extract_first()
@@ -394,5 +397,5 @@ class Fangtianxia02Spider(scrapy.Spider):
         items['street'] = street
         items['housing_url'] = housing_url
         items['housing_detail_url'] = housing_detail_url
-        yield items
-        # print(items)
+        if self.redis.hexists(r_key, housing_url):
+            yield items
