@@ -20,8 +20,6 @@ class Fangtianxia01Spider(scrapy.Spider):
         redis_db = settings['REDIS_DB']
         redis_password = settings['REDIS_PASS']
         self.redis = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db, password=redis_password)
-        self.sum_xinfang = 0
-        self.sum_ershoufang = 0
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
@@ -41,6 +39,7 @@ class Fangtianxia01Spider(scrapy.Spider):
     def parse(self, response):
         content = response.xpath("//table[@id='senfe']/tr")
         province = None
+        entrance_list = []
         for item in content:
             ss = "".join(item.xpath("./td")[1].xpath("./strong/text()").extract())
             cities = item.xpath("./td")[2].xpath("./a")
@@ -59,8 +58,35 @@ class Fangtianxia01Spider(scrapy.Spider):
                 if province != "其它":
                     if city_name in ["北京", "上海", "重庆", "天津"]:
                         province = city_name
-                    yield scrapy.Request(url=city_url, callback=self.parse_city,
-                                         meta={'province': province, 'city': city_name})
+                    entrance_list.append({"province": province, "city": city_name, "city_url": city_url})
+        entrance_list_length = len(entrance_list)
+        # for i in range(int(entrance_list_length * 0.25)):
+        #     url = entrance_list[i]['city_url']
+        #     province = entrance_list[i]['province']
+        #     city = entrance_list[i]['city']
+        #     yield scrapy.Request(url=url, callback=self.parse_city,
+        #                          meta={'province': province, 'city': city})
+
+        # for i in range(int(entrance_list_length * 0.25), int(entrance_list_length * 0.5)):
+        #     url = entrance_list[i]['city_url']
+        #     province = entrance_list[i]['province']
+        #     city = entrance_list[i]['city']
+        #     yield scrapy.Request(url=url, callback=self.parse_city,
+        #                          meta={'province': province, 'city': city})
+
+        # for i in range(int(entrance_list_length * 0.5), int(entrance_list_length * 0.75)):
+        #     url = entrance_list[i]['city_url']
+        #     province = entrance_list[i]['province']
+        #     city = entrance_list[i]['city']
+        #     yield scrapy.Request(url=url, callback=self.parse_city,
+        #                          meta={'province': province, 'city': city})
+
+        for i in range(int(entrance_list_length * 0.75), entrance_list_length):
+            url = entrance_list[i]['city_url']
+            province = entrance_list[i]['province']
+            city = entrance_list[i]['city']
+            yield scrapy.Request(url=url, callback=self.parse_city,
+                                 meta={'province': province, 'city': city})
 
     def parse_city(self, response):
         xinfang = response.xpath("//div[@track-id='newhouse']/div[@class='s4Box']/a")
@@ -107,10 +133,6 @@ class Fangtianxia01Spider(scrapy.Spider):
                 # 可能出现验证码
         if search_type == "ershoufang":
             districts = response.xpath("//div[@class='qxName']/a")
-            # ershoufang_city_house_total = response.xpath("//p[@class='findplotNumwrap']/b/text()").extract_first()
-            # if ershoufang_city_house_total:
-            #     self.sum = self.sum + int(ershoufang_city_house_total)
-            # print(province, city, ershoufang_city_house_total, self.sum)
             if districts:
                 for district in districts:
                     district_name = district.xpath("./text()").extract_first()

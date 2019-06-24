@@ -20,7 +20,7 @@ class Fangtianxia02Spider(scrapy.Spider):
         redis_db = settings['REDIS_DB']
         redis_password = settings['REDIS_PASS']
         self.redis = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db, password=redis_password)
-        self.redis0 = redis.StrictRedis(host=redis_host, port=redis_port, db=0, password=redis_password)
+        # self.redis0 = redis.StrictRedis(host=redis_host, port=redis_port, db=0, password=redis_password)
         self.sum_xinfang = 0
         self.sum_ershoufang = 0
 
@@ -45,7 +45,7 @@ class Fangtianxia02Spider(scrapy.Spider):
         urls = self.redis.hkeys(r_key)
         for url in urls:
             detail_url = url.decode()
-            if not self.redis0.sismember(base_key, detail_url):
+            if not self.redis.sismember(base_key, detail_url):
                 data = json.loads(self.redis.hget(r_key, detail_url))
                 yield scrapy.Request(url=detail_url, callback=self.parse_detail, meta=data)
 
