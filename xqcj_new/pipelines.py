@@ -137,7 +137,10 @@ class XqcjNewPipeline(object):
                 'heating_mode',
                 'parking_place',
                 'business_circle',
-                'housing_detail_url'
+                'housing_detail_url',
+                'built_year',
+                'building_area',
+                'flag'
             ]
             for i in range(len(fields)):
                 if fields[i] not in data:

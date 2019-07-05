@@ -23,12 +23,12 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 16
+CONCURRENT_REQUESTS = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY = 1
+# DOWNLOAD_DELAY = 0.5
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -53,9 +53,9 @@ CONCURRENT_REQUESTS = 16
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'xqcj_new.middlewares.XqcjNewDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+   'xqcj_new.middlewares.XqcjNewDownloaderMiddleware': 543,
+}
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -102,3 +102,8 @@ REDIS_PORT = 6379
 REDIS_DB = 1
 # REDIS_PASS = "jiaqiubo"
 REDIS_PASS = None
+
+PROXY_PROVIDER_API = "http://localhost:5555/random"
+BLOCK_PROXY_SET = "blocked_proxies"    # 被禁IP集合
+# UNBLOCKED_PROXY_SET_PREFIX = "unblocked_proxies"         # 未被禁IP集合，自动更换的IP
+UNBLOCKED_PROXY_SET = "unblocked_proxies"         # 未被禁IP集合，自动更换的IP

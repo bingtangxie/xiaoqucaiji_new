@@ -64,13 +64,12 @@ class Anjuke01Spider(scrapy.Spider):
         #     city = entrance_list[i]['city']
         #     yield scrapy.Request(url=url, callback=self.parse_city, meta={"city": city})
 
-        for i in range(int(entrance_list_length * 0.25), entrance_list_length):
+        for i in range(int(entrance_list_length * 0.75), entrance_list_length):
             url = entrance_list[i]['city_url']
             city = entrance_list[i]['city']
             yield scrapy.Request(url=url, callback=self.parse_city, meta={"city": city})
 
     def parse_city(self, response):
-        # print(response.text)
         header_nav = response.xpath("//ul[@class='L_tabsnew']/li")
         city = response.meta['city']
         if header_nav:
@@ -79,13 +78,18 @@ class Anjuke01Spider(scrapy.Spider):
                 if label == "新 房":
                     xinfang_url = header_item.xpath("./a/@href").extract_first()
                     search_type = "xinfang"
-                    yield scrapy.Request(url=xinfang_url, callback=self.parse_district,
-                                         meta={'city': city, 'search_type': search_type})
+                    # yield scrapy.Request(url=xinfang_url, callback=self.parse_district,
+                    #                      meta={'city': city, 'search_type': search_type})
                 if label == "二手房":
-                    ershoufang_url = header_item.xpath("./a/@href").extract_first()
-                    search_type = "ershoufang"
-                    yield scrapy.Request(url=ershoufang_url, callback=self.parse_district,
-                                         meta={'city': city, 'search_type': search_type})
+                    # ershoufang_url = header_item.xpath("./a/@href").extract_first()
+                    search_type = "xiaoqu"
+                    all_labels = header_item.xpath("./div/a")
+                    for label in all_labels:
+                        label_name = label.xpath("./text()").extract_first().strip()
+                        if label_name == "小区":
+                            xiaoqu_url = label.xpath("./@href").extract_first()
+                            yield scrapy.Request(url=xiaoqu_url, callback=self.parse_district,
+                                                 meta={'city': city, 'search_type': search_type})
         else:
             pass
 
@@ -106,8 +110,23 @@ class Anjuke01Spider(scrapy.Spider):
                         yield scrapy.Request(url=street_url, callback=self.parse_list,
                                              meta={'city': city, 'district': district_name, 'street': street_name,
                                                    'search_type': search_type})
-        if search_type == "ershoufang":
-            pass
+        if search_type == "xiaoqu":
+            districts = response.xpath("//div[@class='items']")[0].xpath("./span/a")
+            for district in districts:
+                district_name = district.xpath("./text()").extract_first()
+                district_url = district.xpath("./@href").extract_first()
+                yield scrapy.Request(url=district_url, callback=self.parse_street, meta={'city': city, 'district': district_name, 'search_type': search_type})
+
+    def parse_street(self, response):
+        search_type = response.meta['search_type']
+        city = response.meta['city']
+        district = response.meta['district']
+        if search_type == "xiaoqu":
+            streets = response.xpath("//div[@class='sub-items']/a")
+            for street in streets:
+                street_name = street.xpath("./text()").extract_first().strip()
+                street_url = street.xpath("./@href").extract_first()
+                yield scrapy.Request(url=street_url, callback=self.parse_list, meta={'city': city, 'district': district, 'street': street_name, 'search_type': search_type})
 
     def parse_list(self, response):
         search_type = response.meta['search_type']
@@ -121,16 +140,30 @@ class Anjuke01Spider(scrapy.Spider):
                 if detail_url_raw:
                     detail_url = detail_url_raw.xpath("./@href").extract_first()
                     r_key = re.search("(.+)_\d+", Anjuke01Spider.name).group(1) + "_detail_url_hashtable"
-                    data = {"city": city, "district": district, "street": street, "housing_url": detail_url, "search_type": search_type}
+                    data = {"city": city, "district": district, "street": street, "housing_url": detail_url,
+                            "search_type": search_type}
                     self.redis.hset(r_key, detail_url, json.dumps(data))
-                # if not self.redis.sismember(Anjuke01Spider.name, detail_url):
-                #     yield scrapy.Request(url=detail_url, callback=self.parse_detail,
-                #                          meta={'city': city, 'district': district, 'street': street,
-                #                                'housing_url': detail_url, 'search_type': search_type})
-                pagination = response.xpath("//div[@class='pagination']")
-                next_page = pagination.xpath("./a[@class='next-page next-link']")
+            pagination = response.xpath("//div[@class='pagination']")
+            next_page = pagination.xpath("./a[@class='next-page next-link']")
+            if next_page:
+                next_url = next_page[0].xpath("./@href").extract_first()
+                yield scrapy.Request(url=next_url, callback=self.parse_list,
+                                     meta={'city': city, 'district': district, 'street': street,
+                                           'search_type': search_type})
+        if search_type == "xiaoqu":
+            buildings = response.xpath("//div[@class='li-info']")
+            if buildings:
+                for building in buildings:
+                    detail_url_raw = building.xpath("./h3/a")
+                    if detail_url_raw:
+                        detail_url = detail_url_raw.xpath("./@href").extract_first()
+                        r_key = re.search("(.+)_\d+", Anjuke01Spider.name).group(1) + "_detail_url_hashtable"
+                        data = {"city": city, "district": district, "street": street, "housing_url": detail_url,
+                                "search_type": search_type}
+                        self.redis.hset(r_key, detail_url, json.dumps(data))
+                next_page = response.xpath("//a[@class='aNxt']")
                 if next_page:
-                    next_url = next_page[0].xpath("./@href").extract_first()
+                    next_url = next_page.xpath("./@href").extract_first()
                     yield scrapy.Request(url=next_url, callback=self.parse_list,
                                          meta={'city': city, 'district': district, 'street': street,
                                                'search_type': search_type})

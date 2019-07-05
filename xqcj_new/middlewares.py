@@ -78,6 +78,10 @@ class XqcjNewDownloaderMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+        request.headers['User-Agent'] = spider.ua.random
+        # request.headers['referer'] = "https://www.baidu.com"
+        # request.meta['proxy'] = "http://60.167.132.108:808"
+        # request.meta['proxy'] = "http://146.148.242.61:443"
         return None
 
     def process_response(self, request, response, spider):
